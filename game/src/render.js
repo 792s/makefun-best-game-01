@@ -115,7 +115,7 @@ export function createRenderer(canvas) {
     }
   }
 
-  function drawEnemy(e, now) {
+  function drawEnemy(e, now, player) {
     const wob = Math.sin(now * 4 + e.wobble) * 0.06;
     const r = e.radius * (1 + wob);
     ctx.globalAlpha = 0.25;
@@ -148,13 +148,16 @@ export function createRenderer(canvas) {
         ctx.fill();
       }
     }
-    // Eyes, always watching the player.
+    // Eyes, always watching the player: the pupils lean toward the light.
     const ex = e.x;
     const ey = e.y - r * 0.15;
+    const look = player ? Math.atan2(player.y - e.y, player.x - e.x) : 0;
+    const lx = Math.cos(look) * r * 0.08;
+    const ly = Math.sin(look) * r * 0.08;
     ctx.fillStyle = '#0b0e1a';
     ctx.beginPath();
-    ctx.arc(ex - r * 0.32, ey, Math.max(2, r * 0.16), 0, Math.PI * 2);
-    ctx.arc(ex + r * 0.32, ey, Math.max(2, r * 0.16), 0, Math.PI * 2);
+    ctx.arc(ex - r * 0.32 + lx, ey + ly, Math.max(2, r * 0.16), 0, Math.PI * 2);
+    ctx.arc(ex + r * 0.32 + lx, ey + ly, Math.max(2, r * 0.16), 0, Math.PI * 2);
     ctx.fill();
     if (e.behaviour === 'spitter') {
       ctx.fillStyle = '#0b0e1a';
@@ -200,7 +203,9 @@ export function createRenderer(canvas) {
   function drawPlayer(state, now) {
     const p = state.player;
     const blink = p.invuln > 0 && Math.floor(now * 18) % 2 === 0;
-    drawGlow(p.x, p.y, 120, 'rgba(255, 209, 102, 0.55)', blink ? 0.35 : 0.8);
+    // The light breathes: a slow pulse so the player is easy to find in a crowd.
+    const pulse = 120 + Math.sin(now * 3) * 10;
+    drawGlow(p.x, p.y, pulse, 'rgba(255, 209, 102, 0.55)', blink ? 0.35 : 0.8);
     // Orbit sparks.
     if (state.weapons.orbit) {
       const def = WEAPONS.orbit.levels[state.weapons.orbit - 1];
@@ -263,7 +268,7 @@ export function createRenderer(canvas) {
   function drawWorld(state, particles, now) {
     drawBackground(now);
     drawGems(state);
-    for (const e of state.enemies) drawEnemy(e, now);
+    for (const e of state.enemies) drawEnemy(e, now, state.player);
     drawPlayer(state, now);
     drawShots(state);
     particles.draw(ctx);
@@ -365,7 +370,7 @@ export function createRenderer(canvas) {
       wx += 52;
     }
     // XP bar, bottom.
-    bar(24, VIEW.height - 14, VIEW.width - 48, 8, p.xp / p.xpNext, PALETTE.cyan);
+    bar(24, VIEW.height - 16, VIEW.width - 48, 10, p.xp / p.xpNext, PALETTE.cyan);
     // Boss banner.
     if (state.banner) {
       const a = Math.min(1, state.banner.timer / 0.6, (2.8 - state.banner.timer) / 0.3 + 1);

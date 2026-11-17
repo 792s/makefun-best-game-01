@@ -53,11 +53,14 @@ export function unlockedTypes(time) {
 export function spawnEnemy(rng, id, x, y, time) {
   const def = ENEMY_TYPES[id];
   const elite = time >= ELITE_AT && rng.chance(ELITE_CHANCE);
-  const hpMul = 1 + time / 360;
+  // Enemy bulk grows with the night, but slower than the player's damage does,
+  // so a run that keeps levelling keeps up. Elites are tough (4x) but not
+  // boss-tough — a wall the player cannot focus-fire through is no fun.
+  const hpMul = 1 + time / 480;
   return {
     id, x, y,
-    hp: def.hp * hpMul * (elite ? 6 : 1),
-    maxHp: def.hp * hpMul * (elite ? 6 : 1),
+    hp: def.hp * hpMul * (elite ? 4 : 1),
+    maxHp: def.hp * hpMul * (elite ? 4 : 1),
     speed: def.speed * (1 + Math.min(time / 600, 0.35)) * (elite ? 0.9 : 1),
     damage: def.damage * (elite ? 1.6 : 1),
     radius: def.radius * (elite ? 1.5 : 1),

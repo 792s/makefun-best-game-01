@@ -8,9 +8,9 @@ import { EVENT_LEVELUP, EVENT_OVER, EVENT_VICTORY, totalScore } from './world.js
 import { SCREEN_LEVELUP, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, SCREEN_VICTORY } from './render.js';
 
 const START_SECONDS = 5;
-const PLAY_SECONDS = 75;
-const PLAY_FALLBACK_SECONDS = 30;
-const LEVELUP_LIMIT_SECONDS = 120;
+const PLAY_SECONDS = 120;
+const PLAY_FALLBACK_SECONDS = 75;
+const LEVELUP_LIMIT_SECONDS = 180;
 const END_PLAY_SECONDS = 40;
 const END_LIMIT_SECONDS = 400;
 
@@ -63,12 +63,23 @@ function autopilot(state, skill) {
   return { x: x / len, y: y / len };
 }
 
-/** Play forward for `seconds`, auto-picking the first card on every level-up. */
+/** Pick like a player who wants a full arsenal: a new weapon first, then the
+ * strongest upgrade on offer, then whatever is left. The staged frames show
+ * a run that is actually going somewhere, not a first-card accident. */
+function pickCard(world) {
+  const cards = world.state.pendingCards;
+  if (!cards || cards.length === 0) return;
+  const fresh = cards.find((c) => c.kind === 'weapon' && c.fresh);
+  const upgrade = cards.filter((c) => c.kind === 'weapon' && !c.fresh).sort((a, b) => b.level - a.level)[0];
+  world.applyCard(fresh ?? upgrade ?? cards[0]);
+}
+
+/** Play forward for `seconds`, picking cards the way a player would. */
 function playFor(world, seconds, skill) {
   const steps = Math.floor(seconds / STEP);
   for (let i = 0; i < steps; i += 1) {
     const events = world.step(STEP, autopilot(world.state, skill), false);
-    if (world.state.pendingCards) world.applyCard(world.state.pendingCards[0]);
+    if (world.state.pendingCards) pickCard(world);
     if (events & (EVENT_OVER | EVENT_VICTORY)) break;
   }
 }
@@ -89,10 +100,17 @@ export function stageShot(name, world) {
   }
   if (name === 'levelup') {
     world.reset();
+    // Stage the third offer, not the first: by then the clearing is busy,
+    // the player has a build, and the cards mix new blessings with upgrades.
+    let offers = 0;
     const steps = Math.floor(LEVELUP_LIMIT_SECONDS / STEP);
     for (let i = 0; i < steps; i += 1) {
       const events = world.step(STEP, autopilot(world.state, PILOT_PLAY), false);
-      if (events & EVENT_LEVELUP) break;
+      if (events & EVENT_LEVELUP) {
+        offers += 1;
+        if (offers >= 3) break;
+        pickCard(world);
+      }
       if (events & (EVENT_OVER | EVENT_VICTORY)) break;
     }
     if (!world.state.pendingCards) {
@@ -125,7 +143,7 @@ export function stageShot(name, world) {
     const steps = Math.floor(END_LIMIT_SECONDS / STEP);
     for (let i = 0; i < steps; i += 1) {
       const events = world.step(STEP, { x: 0, y: 0 }, false);
-      if (world.state.pendingCards) world.applyCard(world.state.pendingCards[0]);
+      if (world.state.pendingCards) pickCard(world);
       if (events & (EVENT_OVER | EVENT_VICTORY)) break;
     }
     return {

@@ -1,7 +1,7 @@
 // Juice: sparks, rings and floating numbers. Particles are a capped pool of plain
 // objects — no allocation churn mid-fight — each with a velocity, a life and a fade.
 // Floating texts rise and fade; rings expand and thin out.
-import { MAX_PARTICLES } from './config.js';
+import { MAX_PARTICLES, VIEW } from './config.js';
 
 export function createParticles() {
   const parts = [];
@@ -30,7 +30,10 @@ export function createParticles() {
     },
     text(x, y, value, color) {
       if (texts.length > 40) texts.shift();
-      texts.push({ x, y, value, color, life: 0.8, maxLife: 0.8 });
+      // Keep numbers inside the play area and clear of the HUD strip.
+      const cx = Math.min(VIEW.width - 30, Math.max(30, x));
+      const cy = Math.max(96, y);
+      texts.push({ x: cx, y: cy, value, color, life: 0.8, maxLife: 0.8, big: Number(value) >= 25 });
     },
     update(dt) {
       for (let i = parts.length - 1; i >= 0; i -= 1) {
@@ -78,7 +81,12 @@ export function createParticles() {
       ctx.textAlign = 'center';
       for (const t of texts) {
         ctx.globalAlpha = Math.max(0, t.life / t.maxLife);
-        ctx.font = 'bold 15px system-ui, sans-serif';
+        // Big hits read bigger; every number gets a dark outline so it
+        // stays readable over the dark arena and the bright bursts.
+        ctx.font = t.big ? 'bold 20px system-ui, sans-serif' : 'bold 16px system-ui, sans-serif';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(5, 6, 16, 0.85)';
+        ctx.strokeText(t.value, t.x, t.y);
         ctx.fillStyle = t.color;
         ctx.fillText(t.value, t.x, t.y);
       }

@@ -94,11 +94,10 @@ export function createWorld(rng) {
     return { x: VIEW.width - m, y: rng.range(m, VIEW.height - m) };
   }
 
-  function spawnWave() {
-    const pace = spawnPace(state.time);
+  function spawnWave(batch) {
     const types = unlockedTypes(state.time);
     const totalWeight = types.reduce((sum, t) => sum + t.weight, 0);
-    for (let i = 0; i < pace.batch; i += 1) {
+    for (let i = 0; i < batch; i += 1) {
       if (state.enemies.length >= MAX_ENEMIES) return;
       let roll = rng.next() * totalWeight;
       let id = types[0].id;
@@ -142,7 +141,7 @@ export function createWorld(rng) {
 
   function damageEnemy(enemy, amount, kx, ky) {
     enemy.hp -= amount;
-    enemy.flash = 0.09;
+    enemy.flash = 0.12;
     state.damageDealt += amount;
     const resist = enemy.behaviour === 'brute' || enemy.boss ? 0.15 : 1;
     enemy.knockX += kx * resist;
@@ -367,7 +366,15 @@ export function createWorld(rng) {
       state.spawnTimer -= dt;
       if (state.spawnTimer <= 0 && state.enemies.length < 9) {
         state.spawnTimer = 1.6;
-        const pt = spawnPoint();
+        // Title shades gather low, around the waiting light — never over
+        // the title text or the how-to panel above it.
+        const m = ARENA.margin;
+        const edge = rng.int(0, 2);
+        const pt = edge === 0
+          ? { x: rng.range(m, VIEW.width - m), y: VIEW.height - m }
+          : edge === 1
+            ? { x: m, y: rng.range(360, VIEW.height - m) }
+            : { x: VIEW.width - m, y: rng.range(360, VIEW.height - m) };
         state.enemies.push(spawnEnemy(rng, rng.pick(['shade', 'wisp', 'shade']), pt.x, pt.y, 30));
       }
       for (const enemy of state.enemies) {
@@ -410,11 +417,14 @@ export function createWorld(rng) {
       events |= EVENT_BOSS;
     }
 
-    // Roaming spawns.
+    // Roaming spawns. While a boss lives, the Hollow holds its lesser shades
+    // back — the boss fight is the fight, not the boss plus a full crowd.
     state.spawnTimer -= dt;
     if (state.spawnTimer <= 0) {
-      spawnWave();
-      state.spawnTimer = spawnPace(state.time).interval;
+      const pace = spawnPace(state.time);
+      const bossUp = state.boss && !state.boss.dead;
+      spawnWave(bossUp ? Math.max(1, pace.batch - 1) : pace.batch);
+      state.spawnTimer = bossUp ? pace.interval * 1.7 : pace.interval;
     }
 
     fireWeapons(dt);
