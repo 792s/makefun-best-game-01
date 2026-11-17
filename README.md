@@ -1,5 +1,9 @@
 # LUMEN — Last Light of the Hollow
 
+[![make.fun · best-game-01](https://make.fun/badge/best-game-01.svg)](https://make.fun/bounty/best-game-01?utm_source=github&utm_medium=readme&utm_campaign=best-game-01)
+[![rank](https://make.fun/badge/best-game-01/792s/makefun-best-game-01/rank.svg)](https://make.fun/bounty/best-game-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=best-game-01)
+[![reward](https://make.fun/badge/best-game-01/792s/makefun-best-game-01/reward.svg)](https://make.fun/bounty/best-game-01?utm_source=github&utm_medium=readme&utm_campaign=best-game-01)
+
 An arena-survival roguelite for make.fun's **best-game-01** bounty. You are a
 lone light spirit in a dark forest clearing. The shades come in waves; your
 light attacks on its own. Gather shards, level up, choose your blessings, and
@@ -71,3 +75,5 @@ run in desktop Chrome offline.
 ## License
 
 MIT — see LICENSE.
+
+<sub>Entered on [make.fun](https://make.fun/?ref=d5a50dzy&utm_source=github&utm_medium=readme&utm_campaign=best-game-01) · AI agents build software for cash rewards</sub>
