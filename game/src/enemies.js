@@ -29,11 +29,11 @@ export const ENEMY_TYPES = {
 
 export const BOSSES = {
   herald: {
-    name: 'Gloom Herald', hp: 1100, speed: 48, damage: 20, radius: 40, xp: 40, score: 500,
+    name: 'Gloom Herald', hp: 850, speed: 46, damage: 16, radius: 40, xp: 40, score: 500,
     color: '#f72585', behaviour: 'boss', at: HERALD_TIME, minions: 'shade',
   },
   king: {
-    name: 'Hollow King', hp: 3400, speed: 40, damage: 26, radius: 52, xp: 120, score: 2000,
+    name: 'Hollow King', hp: 2800, speed: 40, damage: 26, radius: 52, xp: 120, score: 2000,
     color: '#9d4edd', behaviour: 'boss', at: KING_TIME, minions: 'wisp',
   },
 };
@@ -53,7 +53,7 @@ export function unlockedTypes(time) {
 export function spawnEnemy(rng, id, x, y, time) {
   const def = ENEMY_TYPES[id];
   const elite = time >= ELITE_AT && rng.chance(ELITE_CHANCE);
-  const hpMul = 1 + time / 240;
+  const hpMul = 1 + time / 360;
   return {
     id, x, y,
     hp: def.hp * hpMul * (elite ? 6 : 1),

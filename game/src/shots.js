@@ -5,10 +5,10 @@
 // and the same seed always gives the same frame.
 import { STEP, VIEW } from './config.js';
 import { EVENT_LEVELUP, EVENT_OVER, EVENT_VICTORY, totalScore } from './world.js';
-import { SCREEN_LEVELUP, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
+import { SCREEN_LEVELUP, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, SCREEN_VICTORY } from './render.js';
 
 const START_SECONDS = 5;
-const PLAY_SECONDS = 50;
+const PLAY_SECONDS = 75;
 const PLAY_FALLBACK_SECONDS = 30;
 const LEVELUP_LIMIT_SECONDS = 120;
 const END_PLAY_SECONDS = 40;
@@ -30,6 +30,17 @@ function autopilot(state, skill) {
       const w = ((skill.fleeRadius - d) / skill.fleeRadius) * 2.4;
       x += (dx / d) * w;
       y += (dy / d) * w;
+    }
+  }
+  // Dodge incoming enemy shots: step sideways from their path.
+  for (const s of state.enemyShots) {
+    const dx = s.x - p.x;
+    const dy = s.y - p.y;
+    const d = Math.hypot(dx, dy) || 1;
+    if (d < 150) {
+      const vl = Math.hypot(s.vx, s.vy) || 1;
+      x += (-s.vy / vl) * 1.6;
+      y += (s.vx / vl) * 1.6;
     }
   }
   let gem = null;
@@ -90,6 +101,23 @@ export function stageShot(name, world) {
     }
     return { screen: SCREEN_LEVELUP, best: totalScore(world.state) };
   }
+  if (name === 'victory') {
+    // A preview of the victory screen, for the maker's eyes only: it stages a
+    // finished run's numbers directly instead of playing five minutes. It is
+    // not one of the submitted screenshots (see shots.json).
+    world.reset();
+    const s = world.state;
+    s.time = 318;
+    s.kills = 312;
+    s.killScore = 4200;
+    s.gemsCollected = 260;
+    s.player.level = 12;
+    s.player.hp = 72;
+    s.player.maxHp = 125;
+    s.weapons = { bolts: 5, orbit: 4, nova: 3, wisps: 4 };
+    s.victory = true;
+    return { screen: SCREEN_VICTORY, best: totalScore(s), newBest: true };
+  }
   if (name === 'end') {
     world.reset();
     playFor(world, END_PLAY_SECONDS, PILOT_PLAY);
@@ -107,6 +135,9 @@ export function stageShot(name, world) {
     };
   }
   world.reset();
+  // The title's light waits below the panel, the shades gathering around it.
+  world.state.player.x = VIEW.width / 2;
+  world.state.player.y = VIEW.height - 110;
   for (let i = 0; i < START_SECONDS / STEP; i += 1) world.step(STEP, { x: 0, y: 0 }, true);
   return { screen: SCREEN_TITLE, best: 0 };
 }

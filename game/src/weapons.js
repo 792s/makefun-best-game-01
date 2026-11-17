@@ -6,8 +6,8 @@ export const WEAPONS = {
   bolts: {
     name: 'Light Bolts', icon: '✦', desc: 'Bolts of light seek the nearest shades.',
     levels: [
-      { damage: 12, count: 1, cooldown: 0.5, speed: 520 },
-      { damage: 17, count: 1, cooldown: 0.46, speed: 560 },
+      { damage: 15, count: 1, cooldown: 0.5, speed: 520 },
+      { damage: 19, count: 1, cooldown: 0.46, speed: 560 },
       { damage: 20, count: 2, cooldown: 0.44, speed: 580 },
       { damage: 25, count: 2, cooldown: 0.38, speed: 620 },
       { damage: 32, count: 3, cooldown: 0.34, speed: 660 },
@@ -77,11 +77,20 @@ export function drawCards(state, rng) {
     const j = Math.floor(rng.next() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  return pool.slice(0, 3);
+  const cards = pool.slice(0, 3);
+  if (cards.length > 0) return cards;
+  // Everything is maxed: the Hollow still offers a second wind, so a long run
+  // never strands the player on an empty choice.
+  return [{ kind: 'heal', id: 'mend', level: 1, name: 'Second Wind', icon: '✚', desc: 'Restore 50 health and fight on.', fresh: false }];
 }
 
 /** Apply a chosen card to the run's state. */
 export function applyCard(state, card) {
+  if (!card) return;
+  if (card.kind === 'heal') {
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + 50);
+    return;
+  }
   if (card.kind === 'weapon') {
     state.weapons[card.id] = card.level;
     if (card.id === 'bolts') state.boltTimer = 0;

@@ -195,7 +195,7 @@ function runGame() {
       else if (actions & ACTION_CARD_3) pickCard(2);
       const click = input.takeClick();
       if (click) {
-        const rects = cardRects();
+        const rects = cardRects((world.state.pendingCards ?? []).length);
         rects.forEach((r, i) => {
           if (click.x >= r.x && click.x <= r.x + r.w && click.y >= r.y && click.y <= r.y + r.h) pickCard(i);
         });

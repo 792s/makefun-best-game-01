@@ -181,8 +181,23 @@ export function createWorld(rng) {
   }
 
   function nearestEnemies(from, count) {
-    return state.enemies
-      .filter((e) => !e.dead)
+    const alive = state.enemies.filter((e) => !e.dead);
+    const boss = state.boss && !state.boss.dead ? state.boss : null;
+    if (boss) {
+      // The light focuses the great dark while it is near: bolts and wisps
+      // go to the boss first, so a boss fight ends instead of dragging on.
+      const bd = dist2(from, boss);
+      if (bd < 500 * 500) {
+        const rest = alive
+          .filter((e) => e !== boss)
+          .map((e) => ({ e, d: dist2(from, e) }))
+          .sort((a, b) => a.d - b.d)
+          .slice(0, Math.max(0, count - 1))
+          .map((entry) => entry.e);
+        return [boss, ...rest];
+      }
+    }
+    return alive
       .map((e) => ({ e, d: dist2(from, e) }))
       .sort((a, b) => a.d - b.d)
       .slice(0, count)
@@ -308,8 +323,8 @@ export function createWorld(rng) {
     } else if (enemy.behaviour === 'boss') {
       enemy.summonTimer -= dt;
       if (enemy.summonTimer <= 0 && state.enemies.length < MAX_ENEMIES - 4) {
-        enemy.summonTimer = enemy.hp < enemy.maxHp / 2 ? 7 : 10;
-        for (let i = 0; i < 4; i += 1) {
+        enemy.summonTimer = enemy.hp < enemy.maxHp / 2 ? 8 : 11;
+        for (let i = 0; i < 3; i += 1) {
           const a = rng.range(0, Math.PI * 2);
           const minion = spawnEnemy(rng, BOSSES[enemy.id].minions, enemy.x + Math.cos(a) * 50, enemy.y + Math.sin(a) * 50, state.time);
           state.enemies.push(minion);
@@ -318,8 +333,8 @@ export function createWorld(rng) {
       }
       enemy.burstTimer -= dt;
       if (enemy.burstTimer <= 0) {
-        enemy.burstTimer = enemy.hp < enemy.maxHp / 2 ? 3.2 : 4.5;
-        const n = enemy.id === 'king' ? 12 : 8;
+        enemy.burstTimer = enemy.hp < enemy.maxHp / 2 ? 3.6 : 5.0;
+        const n = enemy.id === 'king' ? 12 : 6;
         for (let i = 0; i < n; i += 1) {
           const a = (i / n) * Math.PI * 2 + rng.range(0, 0.4);
           state.enemyShots.push({
@@ -356,8 +371,8 @@ export function createWorld(rng) {
         state.enemies.push(spawnEnemy(rng, rng.pick(['shade', 'wisp', 'shade']), pt.x, pt.y, 30));
       }
       for (const enemy of state.enemies) {
-        const dx = VIEW.width / 2 - enemy.x;
-        const dy = VIEW.height / 2 - enemy.y;
+        const dx = p.x - enemy.x;
+        const dy = p.y - enemy.y;
         const d = Math.hypot(dx, dy) || 1;
         if (d > 130) {
           enemy.x += (dx / d) * enemy.speed * 0.5 * dt;
@@ -576,5 +591,15 @@ export function createWorld(rng) {
   }
 
   reset();
-  return { state, particles, reset, step, applyCard };
+  // `state` is exposed through a getter: reset() replaces the state object, and
+  // every reader must see the current one, never a stale copy.
+  return {
+    get state() {
+      return state;
+    },
+    particles,
+    reset,
+    step,
+    applyCard,
+  };
 }

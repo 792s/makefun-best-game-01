@@ -17,11 +17,11 @@ const CARD_W = 250;
 const CARD_H = 300;
 const CARD_GAP = 28;
 
-export function cardRects() {
-  const total = CARD_W * 3 + CARD_GAP * 2;
+export function cardRects(count = 3) {
+  const total = CARD_W * count + CARD_GAP * (count - 1);
   const x0 = (VIEW.width - total) / 2;
   const y0 = 218;
-  return [0, 1, 2].map((i) => ({ x: x0 + i * (CARD_W + CARD_GAP), y: y0, w: CARD_W, h: CARD_H }));
+  return Array.from({ length: count }, (_, i) => ({ x: x0 + i * (CARD_W + CARD_GAP), y: y0, w: CARD_W, h: CARD_H }));
 }
 
 function fmtTime(seconds) {
@@ -387,7 +387,7 @@ export function createRenderer(canvas) {
   }
 
   function drawTitle(state, ui, now) {
-    dim(0.45);
+    dim(0.62);
     ctx.textAlign = 'center';
     ctx.save();
     ctx.shadowColor = 'rgba(255, 209, 102, 0.8)';
@@ -465,8 +465,8 @@ export function createRenderer(canvas) {
     ctx.fillStyle = PALETTE.white;
     ctx.font = '20px system-ui, sans-serif';
     ctx.fillText('Choose a blessing — click a card or press 1, 2 or 3', VIEW.width / 2, 160);
-    const rects = cardRects();
     const cards = state.pendingCards ?? ui.cards ?? [];
+    const rects = cardRects(cards.length);
     cards.forEach((card, i) => {
       const r = rects[i];
       const hover = ui.mouse && ui.mouse.x >= r.x && ui.mouse.x <= r.x + r.w && ui.mouse.y >= r.y && ui.mouse.y <= r.y + r.h;
@@ -537,7 +537,7 @@ export function createRenderer(canvas) {
   }
 
   function drawOver(state, ui) {
-    dim(0.62);
+    dim(0.74);
     ctx.textAlign = 'center';
     ctx.fillStyle = PALETTE.red;
     ctx.font = 'bold 58px system-ui, sans-serif';
@@ -555,7 +555,7 @@ export function createRenderer(canvas) {
   }
 
   function drawVictory(state, ui) {
-    dim(0.55);
+    dim(0.68);
     ctx.textAlign = 'center';
     ctx.save();
     ctx.shadowColor = 'rgba(255, 209, 102, 0.8)';

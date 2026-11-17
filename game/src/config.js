@@ -24,15 +24,15 @@ export const HERALD_TIME = 120;
 
 /** XP to go from `level` to `level + 1`. */
 export function xpNeeded(level) {
-  return 8 + (level - 1) * 6 + Math.floor((level - 1) * (level - 1) * 0.6);
+  return 5 + (level - 1) * 5 + Math.floor((level - 1) * (level - 1) * 0.4);
 }
 
 /** Enemies per spawn tick and the seconds between ticks, by elapsed time. */
 export function spawnPace(time) {
   const t = Math.min(time, 320);
   return {
-    batch: 1 + Math.floor(t / 45),
-    interval: Math.max(0.32, 1.15 - t * 0.0026),
+    batch: 1 + Math.floor(t / 70),
+    interval: Math.max(0.4, 1.25 - t * 0.002),
   };
 }
 
