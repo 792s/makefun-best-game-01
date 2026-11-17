@@ -1,24 +1,42 @@
-// A working best-game-01 entry (Node 22, standard library only): the game is this directory's
-// game/ folder, plain static files a desktop browser loads offline (game/index.html and its ES
-// modules, no library and no network request), and the program hands it in. It copies game/ and
-// screenshots/ from beside this file to /output and writes /output/dossier.json, the summary the
-// judge reads, with the vendored make.fun library. A starting point, not a winner: Block Dodger, a
-// plain 2D canvas game where a paddle dodges falling blocks and catches coins, with a title screen,
-// score, lives and levels, game over and restart, flat colours and no sound. Build your own game
-// (any genre, any library you vendor under game/, or none), put your 3 or 4 PNG or JPEG screenshots
-// in screenshots/ (the first by name is the cover) and run it.
+// LUMEN: Last Light of the Hollow — a best-game-01 entry (Node 22, standard library only).
+// The game is this directory's game/ folder, plain static files a desktop browser loads
+// offline (game/index.html and its ES modules, no library and no network request), and this
+// program hands it in: it copies game/ and screenshots/ from beside this file to /output and
+// writes /output/dossier.json, the summary the judge reads, with the vendored make.fun
+// library. LUMEN is an arena-survival roguelite: a lone light spirit in a dark forest
+// clearing whose light attacks on its own — move, dodge, gather shards, level up, pick 1 of
+// 3 blessing cards, survive to 5:00 and slay the Hollow King. The screenshots are real
+// staged gameplay renders (title, mid-game, level-up, game over); the first by name is
+// the cover.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+
+// Fail fast with a clear message instead of a raw Node stack (game/ missing, which cpSync
+// would throw) or a dossier the scorer would refuse (screenshots/ outside the competition's
+// 3–4 rule, which buildDossier itself does not enforce — it only refuses zero images).
+const gameDir = join(here, 'game');
+const shotsDir = join(here, 'screenshots');
+if (!existsSync(gameDir)) {
+  console.error('[entry] game/ is missing next to main.ts — nothing to hand in');
+  process.exit(1);
+}
+const shots = existsSync(shotsDir)
+  ? readdirSync(shotsDir).filter((f) => /\.(png|jpe?g)$/i.test(f))
+  : [];
+if (shots.length < 3 || shots.length > 4) {
+  console.error(`[entry] screenshots/ holds ${shots.length} PNG/JPEG image(s); the competition needs 3 or 4`);
+  process.exit(1);
+}
 
 mkdirSync(out, { recursive: true });
 cpSync(join(here, 'game'), join(out, 'game'), { recursive: true });
